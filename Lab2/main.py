@@ -73,6 +73,7 @@ def Schrage(RPQ, fullInfo=False):
     G = []
     N = RPQ.copy()
     t = findRmin(N)
+    Cmax = 0
     while ( (len(G) != 0) or (len(N) != 0)):
         while((len(N) != 0) and findRmin(N) <= t):
             cJob = findRmin(N, 1)
@@ -85,21 +86,26 @@ def Schrage(RPQ, fullInfo=False):
             result_onlyID.insert(k, cJob[3])
             t = t + cJob[2]
             k = k + 1
+            Cmax = max(Cmax,t+cJob[3])
         else:
             t = findRmin(N)
-    if fullInfo: return [result, t]
-    else: return result_onlyID
+    if fullInfo: return [result, Cmax]
+    else: return Cmax
+
+def produceOutput(result, Cmax):
+    output = "Kolejność: "
+    for record in result:
+        output += str(record[0]) + " "
+    output += "\n"
+    output += "czas: " + str(Cmax)
+    return output
 
 filelist = getfilesfromDirectory()
 filelist.sort()
-RPQ = loadRPQfromFile(filelist[1])
-print(filelist[1])
-Cmax = getRPQtime(RPQ)
-perm_N = filelist[1][0:-4] + " PN:" + str(Cmax)
-# print(perm_N)
-sortbyR(RPQ)
-[schragen, t] = Schrage(RPQ, 1)
-print(t)
-Cmaxr = getRPQtime(RPQ)
-sor = filelist[1][0:-4] + " SS:" + str(Cmaxr)
-print(sor)
+for i in range(7):
+    RPQ = loadRPQfromFile(filelist[i])
+    print(filelist[i])
+    [schragen, t] = Schrage(RPQ,1)
+    output = produceOutput(schragen, t)
+    writetoFile(filelist[i], output)
+
