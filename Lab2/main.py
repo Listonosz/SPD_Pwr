@@ -24,8 +24,21 @@ def getRPQtime(RPQ, fullInfo = False):
     else: return Cmax
 
 
-def loadRPQfromFile(nazwa):
+def loadRPQfromdataDirectory(nazwa):
     file_handler = open(os.getcwd()+'/dataIN/'+nazwa, 'r')
+    file_data = file_handler.readlines()
+    RPQ = list()
+    i = 0
+    for line in file_data:
+        newline = list(map(int, line.split()))
+        newline.insert(0, i)
+        i += 1
+        if( len(newline) != 4):
+            continue
+        RPQ.append(newline)
+    return RPQ
+
+def loadRPQfromFile(file_handler):
     file_data = file_handler.readlines()
     RPQ = list()
     i = 0
@@ -92,6 +105,35 @@ def Schrage(RPQ, fullInfo=False):
     if fullInfo: return [result, Cmax]
     else: return Cmax
 
+def SchragePMTN(RPQ, fullInfo=False):
+    Cmax = 0
+    Ng = []
+    Nn = RPQ.copy()
+    result = []
+    t = 0
+    l = [0,0,0,9999999]
+    while( len(Ng) !=0 or len(Nn) != 0 ):
+        while( len(Nn) != 0 and findRmin(Nn) <= t):
+            cJob = findRmin(Nn, 1)
+            Ng.append(cJob)
+            Nn.remove(cJob)
+            if cJob[3] > l[3]:
+                l[2] = t - cJob[1]
+                t = cJob[1]
+                if l[2] > 0:
+                    Ng.append(l)
+        if len(Ng) != 0:
+            cJob = findQmax(Ng, 1)
+            Ng.remove(cJob)
+            result.append(cJob)
+            l = cJob.copy()
+            t = t + cJob[2]
+            Cmax = max(Cmax, t+cJob[3])
+        else:
+            t = findRmin(Nn)
+    if fullInfo: return [result, Cmax]
+    else: return Cmax
+
 def produceOutput(result, Cmax):
     output = "Kolejność: "
     for record in result:
@@ -100,12 +142,17 @@ def produceOutput(result, Cmax):
     output += "czas: " + str(Cmax)
     return output
 
-filelist = getfilesfromDirectory()
-filelist.sort()
-for i in range(7):
-    RPQ = loadRPQfromFile(filelist[i])
-    print(filelist[i])
-    [schragen, t] = Schrage(RPQ,1)
-    output = produceOutput(schragen, t)
-    writetoFile(filelist[i], output)
+# filelist = getfilesfromDirectory()
+# filelist.sort()
+# for i in range(7):
+#     RPQ = loadRPQfromFile(filelist[i])
+#     print(filelist[i])
+#     [schragen, t] = Schrage(RPQ,1)
+#     output = produceOutput(schragen, t)
+#     writetoFile(filelist[i], output)
 
+test2 = open("in200.txt", 'r')
+rrr = loadRPQfromFile(test2)
+[res, t_c] = SchragePMTN(rrr,1)
+out = produceOutput(res, t_c)
+print(out)
