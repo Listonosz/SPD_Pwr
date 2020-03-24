@@ -1,4 +1,5 @@
 import os
+import heapq
 
 def sortbyR(RPQ):
     RPQ.sort(key = lambda x: x[1])
@@ -109,7 +110,6 @@ def SchragePMTN(RPQ, fullInfo=False):
     Cmax = 0
     Ng = []
     Nn = RPQ.copy()
-    result = []
     t = 0
     l = [0,0,0,9999999]
     while( len(Ng) !=0 or len(Nn) != 0 ):
@@ -125,14 +125,66 @@ def SchragePMTN(RPQ, fullInfo=False):
         if len(Ng) != 0:
             cJob = findQmax(Ng, 1)
             Ng.remove(cJob)
-            result.append(cJob)
             l = cJob.copy()
             t = t + cJob[2]
             Cmax = max(Cmax, t+cJob[3])
         else:
             t = findRmin(Nn)
-    if fullInfo: return [result, Cmax]
-    else: return Cmax
+    return Cmax
+
+def SchrageHEAPQ(RPQ):
+    result = []
+    k = 1
+    G = list()
+    N = RPQ.copy()
+    heapq.heapify(G)
+    Cmax = 0
+    t = heapq.nsmallest(1, N, key=lambda x: x[1])[0][1]
+    while( len(G) != 0 or len(N) != 0):
+        while( len(N) != 0  and heapq.nsmallest(1, N, key=lambda x: x[1])[0][1] <= t):
+            cJob = heapq.nsmallest(1, N, key=lambda x: x[1])[0]
+            heapq.heappush(G, cJob)
+            N.remove(cJob)
+
+        if( len(G) != 0 ):
+            cJob = heapq.nlargest(1, G, key=lambda x: x[3])[0]
+            G.remove(cJob)
+            result.append(cJob)
+            t = t + cJob[2]
+            k = k +1
+            Cmax = max(Cmax,t+cJob[3])
+        else:
+            t = heapq.nsmallest(1, N, key=lambda x: x[1])[0][1]
+    return [result, Cmax]
+
+def SchrageHEAPQPMTN(RPQ):
+    Cmax = 0
+    Ng = []
+    Nn = RPQ.copy()
+    heapq.heapify(Ng)
+    t = 0
+    l = [0,0,0,9999999]
+    while( len(Ng) !=0 or len(Nn) != 0 ):
+        while( len(Nn) != 0 and heapq.nsmallest(1, Nn, key=lambda x: x[1])[0][1]  <=  t ):
+            cJob = heapq.nsmallest(1, Nn, key=lambda x: x[1])[0]
+            heapq.heappush(Ng, cJob)
+            Nn.remove(cJob)
+            if cJob[3] > l[3]:
+                l[2] = t - cJob[1]
+                t = cJob[1]
+                if l[2] > 0:
+                    heapq.heappush(Ng, l)
+        if len(Ng) != 0:
+            cJob = heapq.nlargest(1, Ng, key=lambda x: x[3])[0]
+            Ng.remove(cJob)
+            l = cJob.copy()
+            t = t + cJob[2]
+            Cmax = max(Cmax, t+cJob[3])
+        else:
+            t = heapq.nsmallest(1, Nn, key=lambda x: x[1])[0][1]
+    return Cmax
+
+
 
 def produceOutput(result, Cmax):
     output = "Kolejność: "
@@ -153,6 +205,6 @@ def produceOutput(result, Cmax):
 
 test2 = open("in200.txt", 'r')
 rrr = loadRPQfromFile(test2)
-[res, t_c] = SchragePMTN(rrr,1)
-out = produceOutput(res, t_c)
-print(out)
+t_c = SchrageHEAPQPMTN(rrr)
+# out = produceOutput(res, t_c)
+print(t_c)
