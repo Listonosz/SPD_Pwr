@@ -69,8 +69,8 @@ def writetoFile(filename, output):
 def findRmin(RPQ, getFullRecord=False):
     RPQ_ = RPQ.copy()
     sortbyR(RPQ_)
-    if not getFullRecord: return RPQ_[0][1]
-    else: return RPQ_[0]
+    if getFullRecord: return RPQ_[0]
+    else: return RPQ_[0][1]
 #Return full RQP line, with smallest R
 
 def findQmax(RPQ, getFullRecord=False):
@@ -186,25 +186,53 @@ def SchrageHEAPQPMTN(RPQ):
 
 
 
-def produceOutput(result, Cmax):
+def produceOutput(result, Cmax=0):
     output = "Kolejność: "
     for record in result:
         output += str(record[0]) + " "
     output += "\n"
+    if Cmax == 0: return output
     output += "czas: " + str(Cmax)
     return output
 
-# filelist = getfilesfromDirectory()
-# filelist.sort()
-# for i in range(7):
-#     RPQ = loadRPQfromFile(filelist[i])
-#     print(filelist[i])
-#     [schragen, t] = Schrage(RPQ,1)
-#     output = produceOutput(schragen, t)
-#     writetoFile(filelist[i], output)
 
-test2 = open("in200.txt", 'r')
-rrr = loadRPQfromFile(test2)
-t_c = SchrageHEAPQPMTN(rrr)
-# out = produceOutput(res, t_c)
-print(t_c)
+def findBMax(RPQ, getFullRecord=False):
+    Cmax_v = []
+    Cmax = Schrage(RPQ)
+    for item in RPQ:
+        Ctime = gettimeafterNjob(RPQ, item[0])
+        if Ctime == Cmax:
+            Cmax_v.append(item)
+    Cmax_v.sort(reverse=True, key=lambda x: x[0])
+    Bmax = Cmax_v[0]
+    if getFullRecord: return Bmax
+    else: return Bmax[0]
+
+def findAMin(RPQ):
+    b = findBMax(RPQ,1)
+    print("B: ", b)
+    [Sch, Cmax] = Schrage(RPQ, 1)
+    for item in Sch:
+        Ctime = sumPbetweenrange(Sch, item[0], b[0])
+        Ctime += item[1]
+        Ctime += b[3]
+        print(item, Ctime, gettimeafterNjob(Sch, item[0]))
+        
+    
+
+
+
+filelist = getfilesfromDirectory()
+filelist.sort()
+for i in range(6):
+    RPQ = loadRPQfromdataDirectory(filelist[i])
+    [schragen, t] = Schrage(RPQ,1)
+    schragenptm = SchragePMTN(RPQ, 1)
+    [schragenheap, theap] = SchrageHEAPQ(RPQ)
+    schragenptmheap = SchrageHEAPQPMTN(RPQ)
+    output1 = produceOutput(schragen, t)
+    output3 = produceOutput(schragenheap, theap)
+    writetoFile(filelist[i]+"Schrage", output1)
+    writetoFile(filelist[i]+"SchragePTM", str(schragenptm))
+    writetoFile(filelist[i]+"SchrageHeap", output3)
+    writetoFile(filelist[i]+"SchragePTMHeap", str(schragenptmheap))
